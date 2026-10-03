@@ -1,0 +1,65 @@
+// use prisma-8
+model User {
+  id      Int     @id @default(autoincrement())
+  address String  @unique
+  name    String?
+}
+
+model Worker {
+  id             Int          @id @default(autoincrement())
+  address        String       @unique
+  pending_amount BigInt       @default(0) //for amount owed to the worker
+  locked_amount  BigInt       @default(0)
+  submissions    Submission[]
+}
+
+model Task {
+  id          Int          @id @default(autoincrement())
+  title       String       @default("Select the most clickable thumbnail")
+
+  user_id     Int
+  user        User         @relation(fields: [user_id], references: [id])
+  signature   String
+  amount      BigInt
+  done        Boolean      @default(false)
+
+  options     Option[]
+  submissions Submission[]
+}
+
+model Option {
+  id          Int          @id @default(autoincrement())
+  image_url   String
+
+  task_id     Int
+  task        Task         @relation(fields: [task_id], references: [id])
+
+  submissions Submission[]
+}
+
+model Submission {
+  id        Int    @id @default(autoincrement())
+  worker_id Int
+  worker    Worker @relation(fields: [worker_id], references: [id])
+  option_id Int
+  option    Option @relation(fields: [option_id], references: [id])
+  task_id   Int
+  task      Task   @relation(fields: [task_id], references: [id]) 
+  
+  @@unique([task_id, worker_id])
+}
+
+model Payouts {
+  id        Int        @id @default(autoincrement())
+  worker_id Int
+  status    TrxnStatus
+  amount    BigInt
+  signature String
+}
+
+enum TrxnStatus {
+  PENDING
+  DONE
+  PROCESSING
+  FAILED
+}

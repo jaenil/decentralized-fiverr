@@ -1,0 +1,1 @@
+{"root":["./src/index.ts","./src/prisma/contract.d.ts","./src/prisma/db.ts","./src/routers/users.ts","./src/routers/workers.ts"],"version":"5.8.2"}

@@ -1,0 +1,703 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.Option",
+    "label": "Create table \"Option\"",
+    "summary": "Creates table \"Option\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Option"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Option\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Option\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Option\"",
+        "sql": "CREATE TABLE \"public\".\"Option\" (\n  \"id\" SERIAL NOT NULL,\n  \"image_url\" text NOT NULL,\n  \"task_id\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Option\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Option\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Submission",
+    "label": "Create table \"Submission\"",
+    "summary": "Creates table \"Submission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Submission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Submission\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Submission\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Submission\"",
+        "sql": "CREATE TABLE \"public\".\"Submission\" (\n  \"id\" SERIAL NOT NULL,\n  \"option_id\" int4 NOT NULL,\n  \"task_id\" int4 NOT NULL,\n  \"worker_id\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Submission\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Submission\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Task",
+    "label": "Create table \"Task\"",
+    "summary": "Creates table \"Task\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Task\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Task\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Task\"",
+        "sql": "CREATE TABLE \"public\".\"Task\" (\n  \"amount\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"signature\" text NOT NULL,\n  \"title\" text DEFAULT 'Select the most clickable thumbnail' NOT NULL,\n  \"user_id\" int4 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Task\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Task\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.User",
+    "label": "Create table \"User\"",
+    "summary": "Creates table \"User\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"User\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"User\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"User\"",
+        "sql": "CREATE TABLE \"public\".\"User\" (\n  \"address\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"name\" text,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"User\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"User\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.Worker",
+    "label": "Create table \"Worker\"",
+    "summary": "Creates table \"Worker\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Worker"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Worker\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Worker\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Worker\"",
+        "sql": "CREATE TABLE \"public\".\"Worker\" (\n  \"address\" text NOT NULL,\n  \"id\" SERIAL NOT NULL,\n  \"locked_amount\" int4 DEFAULT 0 NOT NULL,\n  \"pending_amount\" int4 DEFAULT 0 NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Worker\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Worker\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.User.User_address_key",
+    "label": "Add unique constraint on \"User\" (address)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "User_address_key",
+        "table": "User"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"User_address_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "User_address_key",
+          "public",
+          "\"public\".\"User\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"User_address_key\"",
+        "sql": "ALTER TABLE \"public\".\"User\" ADD CONSTRAINT \"User_address_key\" UNIQUE (\"address\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"User_address_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "User_address_key",
+          "public",
+          "\"public\".\"User\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Worker.Worker_address_key",
+    "label": "Add unique constraint on \"Worker\" (address)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Worker_address_key",
+        "table": "Worker"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Worker_address_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Worker_address_key",
+          "public",
+          "\"public\".\"Worker\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Worker_address_key\"",
+        "sql": "ALTER TABLE \"public\".\"Worker\" ADD CONSTRAINT \"Worker_address_key\" UNIQUE (\"address\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Worker_address_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Worker_address_key",
+          "public",
+          "\"public\".\"Worker\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Option.Option_task_id_idx_5d5ac774",
+    "label": "Create index \"Option_task_id_idx_5d5ac774\" on \"Option\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Option_task_id_idx_5d5ac774",
+        "table": "Option"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Option_task_id_idx_5d5ac774\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Option_task_id_idx_5d5ac774\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Option_task_id_idx_5d5ac774\"",
+        "sql": "CREATE INDEX \"Option_task_id_idx_5d5ac774\" ON \"public\".\"Option\" (\"task_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Option_task_id_idx_5d5ac774\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Option_task_id_idx_5d5ac774\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Submission.Submission_option_id_idx_0c2968fe",
+    "label": "Create index \"Submission_option_id_idx_0c2968fe\" on \"Submission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Submission_option_id_idx_0c2968fe",
+        "table": "Submission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Submission_option_id_idx_0c2968fe\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Submission_option_id_idx_0c2968fe\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Submission_option_id_idx_0c2968fe\"",
+        "sql": "CREATE INDEX \"Submission_option_id_idx_0c2968fe\" ON \"public\".\"Submission\" (\"option_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Submission_option_id_idx_0c2968fe\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Submission_option_id_idx_0c2968fe\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Submission.Submission_task_id_idx_5d5ac774",
+    "label": "Create index \"Submission_task_id_idx_5d5ac774\" on \"Submission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Submission_task_id_idx_5d5ac774",
+        "table": "Submission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Submission_task_id_idx_5d5ac774\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Submission_task_id_idx_5d5ac774\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Submission_task_id_idx_5d5ac774\"",
+        "sql": "CREATE INDEX \"Submission_task_id_idx_5d5ac774\" ON \"public\".\"Submission\" (\"task_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Submission_task_id_idx_5d5ac774\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Submission_task_id_idx_5d5ac774\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Submission.Submission_worker_id_idx_cb94dc7f",
+    "label": "Create index \"Submission_worker_id_idx_cb94dc7f\" on \"Submission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Submission_worker_id_idx_cb94dc7f",
+        "table": "Submission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Submission_worker_id_idx_cb94dc7f\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Submission_worker_id_idx_cb94dc7f\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Submission_worker_id_idx_cb94dc7f\"",
+        "sql": "CREATE INDEX \"Submission_worker_id_idx_cb94dc7f\" ON \"public\".\"Submission\" (\"worker_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Submission_worker_id_idx_cb94dc7f\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Submission_worker_id_idx_cb94dc7f\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Task.Task_user_id_idx_6c952402",
+    "label": "Create index \"Task_user_id_idx_6c952402\" on \"Task\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Task_user_id_idx_6c952402",
+        "table": "Task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Task_user_id_idx_6c952402\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Task_user_id_idx_6c952402\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Task_user_id_idx_6c952402\"",
+        "sql": "CREATE INDEX \"Task_user_id_idx_6c952402\" ON \"public\".\"Task\" (\"user_id\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Task_user_id_idx_6c952402\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Task_user_id_idx_6c952402\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Option.Option_task_id_fkey",
+    "label": "Add foreign key \"Option_task_id_fkey\" on \"Option\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Option_task_id_fkey",
+        "table": "Option"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Option_task_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Option_task_id_fkey",
+          "public",
+          "\"public\".\"Option\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Option_task_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Option\"\nADD CONSTRAINT \"Option_task_id_fkey\"\nFOREIGN KEY (\"task_id\")\nREFERENCES \"public\".\"Task\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Option_task_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Option_task_id_fkey",
+          "public",
+          "\"public\".\"Option\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Submission.Submission_worker_id_fkey",
+    "label": "Add foreign key \"Submission_worker_id_fkey\" on \"Submission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Submission_worker_id_fkey",
+        "table": "Submission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Submission_worker_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Submission_worker_id_fkey",
+          "public",
+          "\"public\".\"Submission\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Submission_worker_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Submission\"\nADD CONSTRAINT \"Submission_worker_id_fkey\"\nFOREIGN KEY (\"worker_id\")\nREFERENCES \"public\".\"Worker\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Submission_worker_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Submission_worker_id_fkey",
+          "public",
+          "\"public\".\"Submission\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Submission.Submission_option_id_fkey",
+    "label": "Add foreign key \"Submission_option_id_fkey\" on \"Submission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Submission_option_id_fkey",
+        "table": "Submission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Submission_option_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Submission_option_id_fkey",
+          "public",
+          "\"public\".\"Submission\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Submission_option_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Submission\"\nADD CONSTRAINT \"Submission_option_id_fkey\"\nFOREIGN KEY (\"option_id\")\nREFERENCES \"public\".\"Option\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Submission_option_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Submission_option_id_fkey",
+          "public",
+          "\"public\".\"Submission\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Submission.Submission_task_id_fkey",
+    "label": "Add foreign key \"Submission_task_id_fkey\" on \"Submission\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Submission_task_id_fkey",
+        "table": "Submission"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Submission_task_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Submission_task_id_fkey",
+          "public",
+          "\"public\".\"Submission\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Submission_task_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Submission\"\nADD CONSTRAINT \"Submission_task_id_fkey\"\nFOREIGN KEY (\"task_id\")\nREFERENCES \"public\".\"Task\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Submission_task_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Submission_task_id_fkey",
+          "public",
+          "\"public\".\"Submission\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Task.Task_user_id_fkey",
+    "label": "Add foreign key \"Task_user_id_fkey\" on \"Task\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Task_user_id_fkey",
+        "table": "Task"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Task_user_id_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Task_user_id_fkey",
+          "public",
+          "\"public\".\"Task\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Task_user_id_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Task\"\nADD CONSTRAINT \"Task_user_id_fkey\"\nFOREIGN KEY (\"user_id\")\nREFERENCES \"public\".\"User\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Task_user_id_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Task_user_id_fkey",
+          "public",
+          "\"public\".\"Task\""
+        ]
+      }
+    ]
+  }
+]

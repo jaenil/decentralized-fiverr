@@ -1,0 +1,35 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "dev:watch": "tsx watch src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "prisma skills sync || exit 0",
+    "contract:emit": "prisma contract emit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@prisma/cli-engine": "^0.6.2",
+    "@types/node": "^26.4.1",
+    "prisma": "^8.0.0-rc.19"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1144.0",
+    "@aws-sdk/s3-request-presigner": "^3.1144.0",
+    "@prisma/client": "^7.10.0",
+    "@prisma/orm-postgres": "^8.0.0-rc.13",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "dotenv": "^16.0.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3"
+  }
+}
