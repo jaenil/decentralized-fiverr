@@ -750,7 +750,14 @@
                   "id"
                 ]
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "task_id",
+                    "worker_id"
+                  ]
+                }
+              ]
             },
             "Task": {
               "columns": {
@@ -936,7 +943,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "3eee68aad9c1684f22682ce8dede12c7cea9c8d3d7bcd8ccbba8e0fc06bb1400"
+    "storageHash": "574cb5152661f1191954f1e402d9cd030ffbcd8676148e6e8c3d207f90274a51"
   },
   "capabilities": {
     "postgres": {
