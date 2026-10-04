@@ -19,11 +19,13 @@ const client = new S3Client({
 //signin with a wallet
 //must sign a message for the purpose
 router.post("/signup", async (req, res) => {
-    // const address = req.body.address;
+
     const name = req.body.name;
     //TODO: add sign verification logic here 
     const address = req.body.walletId || req.body.address;
-
+    if (!address) {
+        return res.status(400).json({ message: "walletId / address is required" });
+    }
     const user = await db.orm.public.User.upsert({
         create: {
             name: name,

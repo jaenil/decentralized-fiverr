@@ -12,7 +12,9 @@ router.post("/signup", async (req, res) => {
 
     //TODO: add sign verification logic here 
     const address = req.body.walletId || req.body.address;
-
+    if (!address) {
+        return res.status(400).json({ message: "walletId / address is required" });
+    }
     const worker = await db.orm.public.Worker.upsert({
         create: {
             address: address,
@@ -51,6 +53,18 @@ router.post("/submission", workerMiddleware, async (req, res) => {
         return res.status(411).json({ message: "invalid input", "err:": parsedData.error });
     }
     const workerId = req.body.workerId;
+    // check the task exists or not 
+    const task = await db.orm.public.Task.where({ id: parsedData.data.taskId }).first();
+    if (!task) {
+        return res.status(404).json({ message: "Task not found" });
+    }
+    // check the option belongs to that task
+    const option = await db.orm.public.Option
+        .where({ id: parsedData.data.optionId, task_id: parsedData.data.taskId })
+        .first();
+    if (!option) {
+        return res.status(404).json({ message: "Option not found for this task" });
+    }
     try {
         const result = await db.transaction(async (tx) => {
             const submission = await tx.orm.public.Submission.create({

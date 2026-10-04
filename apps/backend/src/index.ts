@@ -7,6 +7,11 @@ const app = express();
 app.use(express.json());
 app.use(cors({origin:"*"}));    
 
+// Allow BigInt values to serialize cleanly over JSON
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 app.use("/v1/users",userRouter);
 app.use("/v1/workers",workerRouter);
 
