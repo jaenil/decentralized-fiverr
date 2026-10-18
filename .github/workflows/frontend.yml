@@ -1,0 +1,30 @@
+name: Frontend checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm install --global npm@11.17.0
+      - run: npm ci --legacy-peer-deps --ignore-scripts
+      - run: npm exec -w tests -- playwright install --with-deps chromium firefox webkit
+      - run: npm run lint -w user-frontend && npm run lint -w workers-frontend
+      - run: npm run typecheck -w user-frontend && npm run typecheck -w workers-frontend && npm run typecheck:frontend -w tests
+      - run: npm run test:frontend:user -w tests && npm run test:frontend:worker -w tests
+      - run: npm run build -w user-frontend && npm run build -w workers-frontend
+      - run: npm run test:e2e:user -w tests && npm run test:e2e:worker -w tests
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: frontend-browser-failures
+          path: |
+            apps/tests/test-results/
+            apps/tests/playwright-report/

@@ -14,17 +14,21 @@ model Worker {
 }
 
 model Task {
-  id          Int          @id @default(autoincrement())
-  title       String       @default("Select the most clickable thumbnail")
+  id               Int          @id @default(autoincrement())
+  title            String       @default("Select the most clickable thumbnail")
 
-  user_id     Int
-  user        User         @relation(fields: [user_id], references: [id])
-  signature   String
-  amount      BigInt
-  done        Boolean      @default(false)
+  user_id          Int
+  user             User         @relation(fields: [user_id], references: [id])
+  signature        String
+  amount           BigInt
+  reward_per_vote  BigInt       @default(10000000)
+  max_submissions  Int          @default(100)
+  submission_count Int          @default(0)
+  done             Boolean      @default(false)
+  status           TaskStatus   @default(ACTIVE)
 
-  options     Option[]
-  submissions Submission[]
+  options          Option[]
+  submissions      Submission[]
 }
 
 model Option {
@@ -62,4 +66,10 @@ enum TrxnStatus {
   DONE
   PROCESSING
   FAILED
+}
+
+enum TaskStatus {
+  ACTIVE
+  COMPLETED
+  EXHAUSTED
 }

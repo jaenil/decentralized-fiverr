@@ -1,11 +1,17 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import { db } from "../prisma/db";
+
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
 import { userMiddleware } from "../middleware/userMiddleware";
 import { createTaskInput, getTaskSubmissions } from "../types";
+
 import { LAMPORTS_PER_SOL } from "../config";
+import nacl from "tweetnacl";
+import bs58 from "bs58";
+import { PublicKey } from "@solana/web3.js";
 
 const router = Router();
 const client = new S3Client({
@@ -19,10 +25,33 @@ const client = new S3Client({
 //signin with a wallet
 //must sign a message for the purpose
 router.post("/signup", async (req, res) => {
-    // const address = req.body.address;
-    const name = req.body.name;
+
+    const { name, address, nonce, signature } = req.body;
+
     //TODO: add sign verification logic here 
-    const address = req.body.walletId || req.body.address;
+
+    if (!address || !nonce || !signature) {
+        return res.status(400).json({ message: "address, nonce, and signature are required" });
+    }
+    try {
+        const messageBytes = new TextEncoder().encode(nonce);
+        const signatureBytes = bs58.decode(signature);
+        const publickKeyBytes = new PublicKey(address).toBytes();
+
+        const isValidSignature = nacl.sign.detached.verify(
+            messageBytes,
+            signatureBytes,
+            publickKeyBytes
+        )
+
+        if (!isValidSignature) {
+            return res.status(401).json({ message: "Invalid signature" });
+        }
+    } catch (e) {
+        console.error("Signature verification error:", e);
+        return res.status(401).json({ message: "Signature verification failed" });
+
+    }
 
     const user = await db.orm.public.User.upsert({
         create: {
@@ -71,16 +100,27 @@ router.post("/task", userMiddleware, async (req, res) => {
     //create a transction with two things firstly create the task and then create the options
     try {
         const task = await db.transaction(async (tx) => {
+            const maxSubmissions = parsedData.data.maxSubmissions ?? 100;
+            const totalBudget = parsedData.data.totalBudget
+                ? BigInt(Math.floor(parsedData.data.totalBudget * LAMPORTS_PER_SOL))
+                : BigInt(1 * LAMPORTS_PER_SOL);
+            const rewardPerVote = totalBudget / BigInt(maxSubmissions);
+
             const newTask = await tx.orm.public.Task.create({
                 user_id: req.body.userId,
                 title: parsedData.data.title ?? "Select the most clickable thumbnail",
                 signature: parsedData.data.signature,
-                amount: BigInt(1 * LAMPORTS_PER_SOL),
+                amount: totalBudget,
+                reward_per_vote: rewardPerVote,
+                max_submissions: maxSubmissions,
+                submission_count: 0,
+                done: false,
+                status: "ACTIVE",
             });
             //now need to go through the entire options array and create new options
             const options = parsedData.data.options;
             await Promise.all(
-                options.map((opt) => 
+                options.map((opt) =>
                     tx.orm.public.Option.create({
                         task_id: newTask.id,
                         image_url: opt.imageUrl,
@@ -121,5 +161,13 @@ router.get("/task", userMiddleware, async (req, res) => {
         options
     });
 })
+
+//TODO get nonce endpoint ,additionally storing the nonce in the db 
+router.get("/nonce", (req, res) => {
+  // For now, we return a simple hardcoded or time-based string.
+  const nonce = `Sign in to application decentralized fiverr at ${Date.now()}`;
+  
+  res.json({ nonce });
+});
 
 export default router;
