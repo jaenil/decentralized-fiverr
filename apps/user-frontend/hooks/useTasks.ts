@@ -1,86 +1,146 @@
 "use client";
-
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   getPreSignedUrl,
   uploadToS3,
   createTask,
   getTaskResults,
 } from "@/lib/api";
+import { loadToken } from "@/lib/auth";
+import { imageValidation } from "@/lib/task-input";
 import type { TaskResultsResponse } from "@repo/types";
 
 export function useTasks() {
   const [loading, setLoading] = useState(false);
-  const [error,   setError]   = useState<string | null>(null);
-
-  /** Upload a file to S3 and return its final URL */
-  const uploadImage = useCallback(async (file: File): Promise<string> => {
-    const { url } = await getPreSignedUrl();          // get pre-signed URL
-    await uploadToS3(url, file);                      // PUT file directly to S3
-
-    const s3Url = new URL(url);
-    const cloudfront = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
-    if (cloudfront) {
-      return `${cloudfront.replace(/\/$/, "")}${s3Url.pathname}`;
-    }
-    // Fallback: strip query string — the base URL is the permanent object URL
-    return url.split("?")[0];
+  const [error, setError] = useState<string | null>(null);
+  const inFlight = useRef<Promise<number> | null>(null);
+  const controller = useRef<AbortController | null>(null);
+  const mounted = useRef(true);
+  const generation = useRef(0);
+  useEffect(() => {
+    mounted.current = true;
+    const cancel = () => {
+      generation.current += 1;
+      controller.current?.abort();
+    };
+    const storage = (event: StorageEvent) => {
+      if (
+        event.key === null ||
+        event.key === "df_token" ||
+        event.key === "df_address"
+      )
+        cancel();
+    };
+    window.addEventListener("df:session-changed", cancel);
+    window.addEventListener("df:session-expired", cancel);
+    window.addEventListener("storage", storage);
+    return () => {
+      mounted.current = false;
+      cancel();
+      window.removeEventListener("df:session-changed", cancel);
+      window.removeEventListener("df:session-expired", cancel);
+      window.removeEventListener("storage", storage);
+    };
   }, []);
 
-  /** Create a task; returns the new task ID */
+  const uploadImage = useCallback(
+    async (file: File, signal?: AbortSignal): Promise<string> => {
+      const { url } = await getPreSignedUrl(signal);
+      await uploadToS3(url, file, signal);
+      const source = new URL(url);
+      const cloudfront = process.env.NEXT_PUBLIC_CLOUDFRONT_URL;
+      return cloudfront
+        ? `${cloudfront.replace(/\/$/, "")}${source.pathname}`
+        : url.split("?")[0];
+    },
+    [],
+  );
+
   const submitTask = useCallback(
-    async (opts: {
+    (opts: {
       files: File[];
       title?: string;
       signature: string;
     }): Promise<number> => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Upload all images in parallel
-        const imageUrls = await Promise.all(
-          opts.files.map((f) => uploadImage(f))
-        );
-        const { id } = await createTask({
-          title: opts.title,
-          signature: opts.signature,
-          options: imageUrls.map((url) => ({ imageUrl: url })),
-        });
-        return id;
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "Failed to create task";
-        setError(msg);
-        throw e;
-      } finally {
-        setLoading(false);
-      }
+      if (inFlight.current) return inFlight.current;
+      const attempt = ++generation.current;
+      const token = loadToken();
+      const address = localStorage.getItem("df_address");
+      const abort = new AbortController();
+      controller.current = abort;
+      const assertCurrent = () => {
+        if (
+          !mounted.current ||
+          generation.current !== attempt ||
+          token !== loadToken() ||
+          address !== localStorage.getItem("df_address")
+        ) {
+          abort.abort();
+          throw new Error(
+            "Task creation cancelled because the session changed.",
+          );
+        }
+      };
+      const run = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          if (opts.files.length < 2)
+            throw new Error("Upload at least 2 images.");
+          const problem = imageValidation(opts.files);
+          if (problem) throw new Error(problem);
+          if (!opts.signature.trim())
+            throw new Error("Transaction signature required.");
+          const imageUrls = await Promise.all(
+            opts.files.map((file) => uploadImage(file, abort.signal)),
+          );
+          assertCurrent();
+          const { id } = await createTask(
+            {
+              title: opts.title,
+              signature: opts.signature,
+              options: imageUrls.map((imageUrl) => ({ imageUrl })),
+            },
+            abort.signal,
+          );
+          assertCurrent();
+          return id;
+        } catch (cause) {
+          abort.abort();
+          if (mounted.current)
+            setError(
+              cause instanceof Error ? cause.message : "Failed to create task",
+            );
+          throw cause;
+        } finally {
+          if (mounted.current) setLoading(false);
+        }
+      };
+      inFlight.current = run().finally(() => {
+        inFlight.current = null;
+      });
+      return inFlight.current;
     },
-    [uploadImage]
+    [uploadImage],
   );
 
-  /** Fetch results for a task */
   const fetchResults = useCallback(
     async (taskId: number): Promise<TaskResultsResponse> => {
       setLoading(true);
       setError(null);
       try {
-        const data = await getTaskResults(taskId);
-        // Derive submissionCount for convenience
-        data.options = data.options.map((opt) => ({
-          ...opt,
-          submissionCount: opt.submissions.length,
-        }));
-        return data;
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "Failed to fetch results";
-        setError(msg);
-        throw e;
+        return await getTaskResults(taskId);
+      } catch (cause) {
+        if (mounted.current)
+          setError(
+            cause instanceof Error ? cause.message : "Failed to fetch results",
+          );
+        throw cause;
       } finally {
-        setLoading(false);
+        if (mounted.current) setLoading(false);
       }
     },
-    []
+    [],
   );
-
   return { loading, error, uploadImage, submitTask, fetchResults };
 }

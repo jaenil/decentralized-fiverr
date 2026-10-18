@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { WalletMultiButton } from "@/components/WalletButton";
 
 export default function Navbar() {
   const { logout } = useAuth();
@@ -31,6 +32,7 @@ export default function Navbar() {
         >
           Disconnect
         </button>
+        <WalletMultiButton />
       </div>
     </nav>
   );

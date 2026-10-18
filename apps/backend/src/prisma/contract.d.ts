@@ -34,7 +34,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'574cb5152661f1191954f1e402d9cd030ffbcd8676148e6e8c3d207f90274a51'>;
+  StorageHashBase<'dfc4ab538039f29ee421ceb0b00dae5b6217ec2a9f6a91d00623206a790829f2'>;
 export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
@@ -271,7 +271,11 @@ export type FieldOutputTypes = {
       readonly amount: CodecTypes['pg/int8@1']['output'];
       readonly done: CodecTypes['pg/bool@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly max_submissions: CodecTypes['pg/int4@1']['output'];
+      readonly reward_per_vote: CodecTypes['pg/int8@1']['output'];
       readonly signature: CodecTypes['pg/text@1']['output'];
+      readonly status: 'ACTIVE' | 'COMPLETED' | 'EXHAUSTED';
+      readonly submission_count: CodecTypes['pg/int4@1']['output'];
       readonly title: CodecTypes['pg/text@1']['output'];
       readonly user_id: CodecTypes['pg/int4@1']['output'];
     };
@@ -312,7 +316,11 @@ export type FieldInputTypes = {
       readonly amount: CodecTypes['pg/int8@1']['input'];
       readonly done: CodecTypes['pg/bool@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly max_submissions: CodecTypes['pg/int4@1']['input'];
+      readonly reward_per_vote: CodecTypes['pg/int8@1']['input'];
       readonly signature: CodecTypes['pg/text@1']['input'];
+      readonly status: 'ACTIVE' | 'COMPLETED' | 'EXHAUSTED';
+      readonly submission_count: CodecTypes['pg/int4@1']['input'];
       readonly title: CodecTypes['pg/text@1']['input'];
       readonly user_id: CodecTypes['pg/int4@1']['input'];
     };
@@ -353,7 +361,11 @@ export type StorageColumnTypes = {
       readonly amount: CodecTypes['pg/int8@1']['output'];
       readonly done: CodecTypes['pg/bool@1']['output'];
       readonly id: CodecTypes['pg/int4@1']['output'];
+      readonly max_submissions: CodecTypes['pg/int4@1']['output'];
+      readonly reward_per_vote: CodecTypes['pg/int8@1']['output'];
       readonly signature: CodecTypes['pg/text@1']['output'];
+      readonly status: 'ACTIVE' | 'COMPLETED' | 'EXHAUSTED';
+      readonly submission_count: CodecTypes['pg/int4@1']['output'];
       readonly title: CodecTypes['pg/text@1']['output'];
       readonly user_id: CodecTypes['pg/int4@1']['output'];
     };
@@ -394,7 +406,11 @@ export type StorageColumnInputTypes = {
       readonly amount: CodecTypes['pg/int8@1']['input'];
       readonly done: CodecTypes['pg/bool@1']['input'];
       readonly id: CodecTypes['pg/int4@1']['input'];
+      readonly max_submissions: CodecTypes['pg/int4@1']['input'];
+      readonly reward_per_vote: CodecTypes['pg/int8@1']['input'];
       readonly signature: CodecTypes['pg/text@1']['input'];
+      readonly status: 'ACTIVE' | 'COMPLETED' | 'EXHAUSTED';
+      readonly submission_count: CodecTypes['pg/int4@1']['input'];
       readonly title: CodecTypes['pg/text@1']['input'];
       readonly user_id: CodecTypes['pg/int4@1']['input'];
     };
@@ -443,7 +459,11 @@ export namespace Models {
     amount: CodecTypes['pg/int8@1']['output'];
     done: CodecTypes['pg/bool@1']['output'];
     id: CodecTypes['pg/int4@1']['output'];
+    max_submissions: CodecTypes['pg/int4@1']['output'];
+    reward_per_vote: CodecTypes['pg/int8@1']['output'];
     signature: CodecTypes['pg/text@1']['output'];
+    status: 'ACTIVE' | 'COMPLETED' | 'EXHAUSTED';
+    submission_count: CodecTypes['pg/int4@1']['output'];
     title: CodecTypes['pg/text@1']['output'];
     user_id: CodecTypes['pg/int4@1']['output'];
     options: public_Option[];
@@ -693,10 +713,46 @@ type ContractBase = Omit<
                     readonly expression: 'autoincrement()';
                   };
                 };
+                readonly max_submissions: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 100>;
+                  };
+                };
+                readonly reward_per_vote: {
+                  readonly nativeType: 'int8';
+                  readonly codecId: 'pg/int8@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int8@1', '10000000'>;
+                  };
+                };
                 readonly signature: {
                   readonly nativeType: 'text';
                   readonly codecId: 'pg/text@1';
                   readonly nullable: false;
+                };
+                readonly status: {
+                  readonly nativeType: 'text';
+                  readonly codecId: 'pg/text@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/text@1', 'ACTIVE'>;
+                  };
+                };
+                readonly submission_count: {
+                  readonly nativeType: 'int4';
+                  readonly codecId: 'pg/int4@1';
+                  readonly nullable: false;
+                  readonly default: {
+                    readonly kind: 'literal';
+                    readonly value: DefaultLiteralValue<'pg/int4@1', 0>;
+                  };
                 };
                 readonly title: {
                   readonly nativeType: 'text';
@@ -810,6 +866,10 @@ type ContractBase = Omit<
             };
           };
           readonly valueSet: {
+            readonly TaskStatus: {
+              readonly kind: 'valueSet';
+              readonly values: readonly ['ACTIVE', 'COMPLETED', 'EXHAUSTED'];
+            };
             readonly TrxnStatus: {
               readonly kind: 'valueSet';
               readonly values: readonly ['PENDING', 'DONE', 'PROCESSING', 'FAILED'];
@@ -1001,9 +1061,25 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
+              readonly max_submissions: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
+              };
+              readonly reward_per_vote: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int8@1' };
+              };
               readonly signature: {
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly status: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/text@1' };
+              };
+              readonly submission_count: {
+                readonly nullable: false;
+                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
               readonly title: {
                 readonly nullable: false;
@@ -1054,7 +1130,11 @@ type ContractBase = Omit<
                 readonly amount: { readonly column: 'amount' };
                 readonly done: { readonly column: 'done' };
                 readonly id: { readonly column: 'id' };
+                readonly max_submissions: { readonly column: 'max_submissions' };
+                readonly reward_per_vote: { readonly column: 'reward_per_vote' };
                 readonly signature: { readonly column: 'signature' };
+                readonly status: { readonly column: 'status' };
+                readonly submission_count: { readonly column: 'submission_count' };
                 readonly title: { readonly column: 'title' };
                 readonly user_id: { readonly column: 'user_id' };
               };
@@ -1131,6 +1211,14 @@ type ContractBase = Omit<
           };
         };
         readonly enum: {
+          readonly TaskStatus: {
+            readonly codecId: 'pg/text@1';
+            readonly members: readonly [
+              { readonly name: 'ACTIVE'; readonly value: 'ACTIVE' },
+              { readonly name: 'COMPLETED'; readonly value: 'COMPLETED' },
+              { readonly name: 'EXHAUSTED'; readonly value: 'EXHAUSTED' },
+            ];
+          };
           readonly TrxnStatus: {
             readonly codecId: 'pg/text@1';
             readonly members: readonly [

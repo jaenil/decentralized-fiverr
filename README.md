@@ -1,159 +1,100 @@
-# Turborepo starter
+# Decentralized Fiverr — thumbnail voting
 
-This Turborepo starter is maintained by the Turborepo core team.
+A prototype marketplace where customers upload thumbnail options and workers vote for their preferred image. Customers view vote totals; workers accrue a database balance. Built with Next.js, Express, PostgreSQL, Prisma ORM and Solana wallet message signing.
 
-## Using this example
+**Payments are unfinished:** task funding is not verified and payouts do not send SOL. Customer signatures are verified, but login challenges are not yet single-use. Worker login currently accepts an address without proof of ownership.
 
-Run the following command:
+## Project layout
 
-```sh
-npx create-turbo@latest
-```
+| Workspace               | Purpose                                           | Development port                           |
+| ----------------------- | ------------------------------------------------- | ------------------------------------------ |
+| `apps/backend`          | HTTP API and PostgreSQL contract                  | 3000                                       |
+| `apps/user-frontend`    | Customer wallet login, uploads and results        | 3001                                       |
+| `apps/workers-frontend` | Worker login, voting and balances                 | 3002                                       |
+| `apps/tests`            | Backend HTTP and frontend component/browser tests | Temporary ports for isolated backend tests |
+| `packages/types`        | Shared API types                                  | —                                          |
+| `apps/docs`             | Unused starter documentation app                  | 3001 (conflicts with customer app)         |
 
-## What's inside?
+## Local setup
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `@next/eslint-plugin-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+Use Node.js 24 or newer, npm 11.17.0, and PostgreSQL 15 or newer.
 
 ```sh
-cd my-turborepo
-turbo build
+npm ci --legacy-peer-deps --ignore-scripts
+cp apps/backend/.env.example apps/backend/.env
+cp apps/user-frontend/.env.example apps/user-frontend/.env.local
+cp apps/workers-frontend/.env.example apps/workers-frontend/.env.local
 ```
 
-Without global `turbo`, use your package manager:
+Edit the backend environment with a **development** database URL, separate nonempty `JWT_SECRET` and `WORKER_JWT_SECRET`, and `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`. Do not overwrite existing local environment files if you have already configured them. The current upload bucket is hardcoded as `decentralized-fiverr-jp` in `apps/backend/src/routers/users.ts`.
+
+Initialize a fresh development database from the current contract:
 
 ```sh
-cd my-turborepo
-npx turbo build
-npm exec turbo build
-npm exec turbo build
+cd apps/backend
+npx prisma db init
+cd ../..
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+This applies database changes to the configured `DATABASE_URL`. The historical initial migration does not represent the entire current contract; see [backend setup](apps/backend/README.md).
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+Start each application in its own terminal:
 
 ```sh
-turbo build --filter=docs
+npm run dev -w backend
+npm run dev -w user-frontend
+npm run dev -w workers-frontend
 ```
 
-Without global `turbo`:
+The existing backend dev script requires `tsx`, which is not currently declared in its manifest. If it is unavailable, install it with `npm install --save-dev tsx -w backend` before using that script. Avoid root `npm run dev` while the starter docs app still shares port 3001.
+
+Frontend API URLs default to `http://localhost:3000`. Uploads additionally need S3 PUT CORS for the customer origin, suitable IAM permissions, and readable image URLs through S3 or your configured CloudFront distribution. See the frontend `.env.example` files and image host allowlists when using your own distribution.
+
+## Manual task creation without a transaction signature
+
+For **local prototype testing**, enter `manual-test-001` in the task's transaction signature field. No SOL transfer is required: the UI requires nonempty text and the backend currently stores it without checking the blockchain. This is a placeholder, not proof of funding. Wallet login signs a separate message; do not paste a private key, seed phrase, or login signature into this field.
+
+1. Open `http://localhost:3001`, connect Phantom, and approve the sign-in message.
+2. Choose **Create task**, add an optional title, enter `manual-test-001`, and select 2–10 PNG/JPEG/WebP images, each no larger than 5 MiB.
+3. Submit and keep the resulting task ID. A failed S3 upload must be fixed before task creation can complete.
+4. Open `http://localhost:3002`, sign in with a test worker address, and vote. The confirmation shows the task ID and selected option; click **Go to next task** when ready. Existing older tasks may appear first.
+5. Refresh the customer's results page and check vote totals. The worker currently earns 0.01 SOL in database units per accepted vote; this is not a funded on-chain balance.
+6. If you test payout, expect **initiated** and funds moved to the locked balance. No actual transfer or completion is implemented.
+
+## Automated checks
+
+Backend HTTP tests can provision and clean up their own database and run the actual routers on a temporary loopback port:
 
 ```sh
-npx turbo build --filter=docs
-npm exec turbo build --filter=docs
-npm exec turbo build --filter=docs
+# Requires initdb and pg_ctl on PATH; run as a non-root user.
+npm run test:backend:isolated -w tests
+
+# Homebrew PostgreSQL 16 example:
+PG_BIN=/opt/homebrew/opt/postgresql@16/bin npm run test:backend:isolated -w tests
 ```
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+This uses generated test wallets, separate temporary JWT secrets, and fake AWS signing credentials. It does not use your configured database, contact Solana, or upload to S3. Tests include real database rollback and duplicate-vote concurrency checks. Explicit TODO cases describe safeguards that are not implemented; passing characterization tests do not mean payments or replay protection work.
 
 ```sh
-cd my-turborepo
-turbo dev
+npm run test:frontend:user -w tests
+npm run test:frontend:worker -w tests
+npm run typecheck -w user-frontend
+npm run typecheck -w workers-frontend
+npm run lint -w user-frontend
+npm run lint -w workers-frontend
+npm exec -w tests -- playwright install chromium firefox webkit
+npm run test:e2e:user -w tests
+npm run test:e2e:worker -w tests
 ```
 
-Without global `turbo`, use your package manager:
+Use the explicit frontend typecheck scripts: the root `check-types` task currently uses a different script name. See [the testing guide](apps/tests/README.md) for tests against an existing backend and isolation limits.
 
-```sh
-cd my-turborepo
-npx turbo dev
-npm exec turbo dev
-npm exec turbo dev
-```
+## Remaining backend work
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+- Worker wallet ownership verification and expiring, single-use customer login challenges.
+- Funding verification, payment reuse prevention, reward budgets and task completion.
+- Atomic concurrent balance changes and transaction-consistent next-task selection.
+- Actual payout submission, confirmation, retries and reconciliation.
+- Server-side upload constraints, unique object keys and abandoned upload cleanup.
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-npm exec turbo dev --filter=web
-npm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-npm exec turbo login
-npm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-npm exec turbo link
-npm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+The [frontend implementation log](docs/superpowers/plans/2026-10-16-implementation-log.md) describes completed UI work; it does not mark these backend features complete.

@@ -33,6 +33,23 @@
     "namespaces": {
       "public": {
         "enum": {
+          "TaskStatus": {
+            "codecId": "pg/text@1",
+            "members": [
+              {
+                "name": "ACTIVE",
+                "value": "ACTIVE"
+              },
+              {
+                "name": "COMPLETED",
+                "value": "COMPLETED"
+              },
+              {
+                "name": "EXHAUSTED",
+                "value": "EXHAUSTED"
+              }
+            ]
+          },
           "TrxnStatus": {
             "codecId": "pg/text@1",
             "members": [
@@ -319,10 +336,44 @@
                   "kind": "scalar"
                 }
               },
+              "max_submissions": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "reward_per_vote": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int8@1",
+                  "kind": "scalar"
+                }
+              },
               "signature": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                },
+                "valueSet": {
+                  "entityKind": "enum",
+                  "entityName": "TaskStatus",
+                  "namespaceId": "public",
+                  "plane": "domain"
+                }
+              },
+              "submission_count": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -400,8 +451,20 @@
                 "id": {
                   "column": "id"
                 },
+                "max_submissions": {
+                  "column": "max_submissions"
+                },
+                "reward_per_vote": {
+                  "column": "reward_per_vote"
+                },
                 "signature": {
                   "column": "signature"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "submission_count": {
+                  "column": "submission_count"
                 },
                 "title": {
                   "column": "title"
@@ -760,6 +823,13 @@
               ]
             },
             "Task": {
+              "checks": [
+                {
+                  "expression": "\"status\" IN ('ACTIVE', 'COMPLETED', 'EXHAUSTED')",
+                  "name": "Task_status_check_ba39f866",
+                  "prefix": "Task_status_check"
+                }
+              ],
               "columns": {
                 "amount": {
                   "codecId": "pg/int8@1",
@@ -784,9 +854,51 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "max_submissions": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 100
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "reward_per_vote": {
+                  "codecId": "pg/int8@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "10000000"
+                  },
+                  "nativeType": "int8",
+                  "nullable": false
+                },
                 "signature": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": false
+                },
+                "status": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "ACTIVE"
+                  },
+                  "nativeType": "text",
+                  "nullable": false,
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "TaskStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "submission_count": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
                   "nullable": false
                 },
                 "title": {
@@ -928,6 +1040,14 @@
             }
           },
           "valueSet": {
+            "TaskStatus": {
+              "kind": "valueSet",
+              "values": [
+                "ACTIVE",
+                "COMPLETED",
+                "EXHAUSTED"
+              ]
+            },
             "TrxnStatus": {
               "kind": "valueSet",
               "values": [
@@ -943,7 +1063,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "574cb5152661f1191954f1e402d9cd030ffbcd8676148e6e8c3d207f90274a51"
+    "storageHash": "dfc4ab538039f29ee421ceb0b00dae5b6217ec2a9f6a91d00623206a790829f2"
   },
   "capabilities": {
     "postgres": {

@@ -1,36 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Worker frontend
 
-## Getting Started
+Next.js portal for thumbnail voting. Application routes use the existing backend API without changes to its authentication or payment behavior.
 
-First, run the development server:
+## Local development
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+From the repository root, install dependencies with `npm ci --legacy-peer-deps --ignore-scripts`, copy this app's `.env.example` to `.env.local`, then run:
+
+```sh
+npm run dev -w workers-frontend
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3002. The API URL defaults to http://localhost:3000. Customer sign-in uses a connected wallet and the server's current nonce flow; worker sign-in still uses a manually supplied address. The customer stores `df_token` and its bound `df_address`; the worker stores `dw_token`. Old customer tokens without an address binding require a new login.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```sh
+npm run lint -w workers-frontend
+npm run typecheck -w workers-frontend
+npm run build -w workers-frontend
+npm run test:frontend:worker -w tests
+npm run test:e2e:worker -w tests
+```
 
-## Learn More
+All tests, fixtures, and runner configuration live in `apps/tests`; see [the testing guide](../tests/README.md). ESLint's launcher resolves this app's TypeScript 5 compiler so the hoisted parser does not consume the incompatible root TypeScript 7 API. Root/backend tooling is unchanged.
 
-To learn more about Next.js, take a look at the following resources:
+Customer uploads accept 2–10 PNG/JPEG/WebP files, each at most 5 MiB. These are client checks; backend validation and timestamp-based object-key collisions remain outside scope. Results derive counts from the API's raw submissions. Worker withdrawal messages describe initiation only: the current backend does not complete real on-chain payouts.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Voting and image display
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+After a successful vote, `/task` shows a confirmation with the task title, task ID, selected option ID and image. **Go to next task** makes a fresh `GET /v1/workers/nextTask` request. A failed next-task request keeps the confirmation available for retry; a balance refresh does not block progression. The legacy `nextTask` returned by submission is ignored. Confirmation is local page state and is not persisted across reloads.
 
-## Deploy on Vercel
+Stored URLs from `decentralized-fiverr-jp.s3.ap-south-1.amazonaws.com` are displayed through `NEXT_PUBLIC_CDN_HOSTNAME`, matching the configured CloudFront distribution. Direct access to this bucket can return 403 even when the same key is readable through CloudFront. Unsupported hosts and failed image requests display **Image unavailable**. The app does not make private S3 objects public or turn placeholder URLs into real images.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+To run browser tests while developing on port 3002:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```sh
+WORKER_E2E_PORT=3102 npm run test:e2e:worker -w tests
+```
+
+Browser tests use separate `.next/e2e` output and controlled API/image responses. They verify UI behavior, not AWS permissions or production backend funding/payouts.

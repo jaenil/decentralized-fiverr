@@ -2,6 +2,7 @@ const TOKEN_KEY = "df_token";
 
 export function saveToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
+  window.dispatchEvent(new Event("df:session-changed"));
 }
 
 export function loadToken(): string | null {
@@ -11,6 +12,7 @@ export function loadToken(): string | null {
 
 export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
+  window.dispatchEvent(new Event("df:session-changed"));
 }
 
 export function isLoggedIn(): boolean {

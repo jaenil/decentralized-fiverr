@@ -6,6 +6,7 @@ import {
   useState,
   useCallback,
   useRef,
+  useEffect,
   type ReactNode,
 } from "react";
 import type { AxiosError } from "axios";
@@ -36,45 +37,80 @@ export function BalanceProvider({ children }: { children: ReactNode }) {
   const [payoutMsg, setPayoutMsg] = useState<string | null>(null);
   const [balanceError, setBalanceError] = useState<string | null>(null);
 
-  // Prevent overlapping fetch calls
-  const fetchingRef = useRef(false);
+  const requested = useRef(0);
+  const active = useRef(true);
+  const inFlight = useRef<Promise<void> | null>(null);
+  const payoutInFlight = useRef(false);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+      requested.current += 1;
+    };
+  }, []);
 
-  const fetchBalance = useCallback(async () => {
-    if (fetchingRef.current) return;
-    fetchingRef.current = true;
-    setLoadingBalance(true);
-    setBalanceError(null);
-    try {
-      const { pendingAmount, lockedAmount } = await getBalance();
-      const rawPending = BigInt(pendingAmount);
-      setRawPendingLamports(rawPending);
-      setPendingSol(lamportsToSol(pendingAmount));
-      setLockedSol(lamportsToSol(lockedAmount));
-    } catch {
-      setBalanceError("Could not load balance. Please refresh.");
-    } finally {
-      setLoadingBalance(false);
-      fetchingRef.current = false;
-    }
+  const fetchBalance = useCallback((): Promise<void> => {
+    requested.current += 1;
+    if (inFlight.current) return inFlight.current;
+    const run = async () => {
+      setLoadingBalance(true);
+      setBalanceError(null);
+      let version: number;
+      do {
+        version = requested.current;
+        try {
+          const result = await getBalance();
+          if (active.current && version === requested.current) {
+            const pending = BigInt(result.pendingAmount);
+            const locked = BigInt(result.lockedAmount);
+            if (pending < 0n || locked < 0n) throw new Error("Invalid balance");
+            setRawPendingLamports(pending);
+            setPendingSol(lamportsToSol(pending));
+            setLockedSol(lamportsToSol(locked));
+            setBalanceError(null);
+          }
+        } catch {
+          if (active.current && version === requested.current)
+            setBalanceError("Could not load balance. Please refresh.");
+        }
+      } while (active.current && version !== requested.current);
+      if (active.current) setLoadingBalance(false);
+    };
+    inFlight.current = run().finally(() => {
+      inFlight.current = null;
+    });
+    return inFlight.current;
   }, []);
 
   const payout = useCallback(async () => {
+    if (
+      payoutInFlight.current ||
+      rawPendingLamports <= 0n ||
+      Boolean(balanceError) ||
+      loadingBalance
+    )
+      return;
+    payoutInFlight.current = true;
     setPayingOut(true);
     setPayoutMsg(null);
     try {
-      const res = await requestPayout();
-      // Display SOL, not raw lamports (fixes issue #5)
+      const result = await requestPayout();
+      if (!active.current) return;
       setPayoutMsg(
-        `✅ Payout of ${lamportsToSol(res.amount)} SOL initiated! Sig: ${res.signature}`
+        `Payout of ${lamportsToSol(result.amount)} SOL initiated. Reference: ${result.signature}`,
       );
       await fetchBalance();
-    } catch (e: unknown) {
-      const ax = e as AxiosError<{ message?: string }>;
-      setPayoutMsg(ax?.response?.data?.message ?? "❌ Payout failed.");
+    } catch (cause) {
+      const error = cause as AxiosError<{ message?: string }>;
+      if (active.current)
+        setPayoutMsg(
+          error.response?.data?.message ?? "Payout failed. Please try again.",
+        );
     } finally {
-      setPayingOut(false);
+      payoutInFlight.current = false;
+      if (active.current) setPayingOut(false);
     }
-  }, [fetchBalance]);
+  }, [fetchBalance, rawPendingLamports, balanceError, loadingBalance]);
 
   return (
     <BalanceContext.Provider

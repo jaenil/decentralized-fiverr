@@ -26,16 +26,20 @@ export default function LoginPage() {
             dFiverr <span className="text-violet-400">Workers</span>
           </h1>
           <p className="text-zinc-400 mt-2 text-sm">
-            Connect your Solana wallet to start earning
+            Sign in with your worker address
           </p>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-zinc-400 mb-1">
+            <label
+              htmlFor="worker-address"
+              className="block text-sm text-zinc-400 mb-1"
+            >
               Wallet Address
             </label>
             <input
+              id="worker-address"
               type="text"
               placeholder="Enter your Solana wallet address"
               value={walletId}
@@ -46,7 +50,11 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
+          {error && (
+            <p role="alert" className="text-red-400 text-sm">
+              {error}
+            </p>
+          )}
 
           <button
             onClick={handleConnect}
@@ -55,12 +63,12 @@ export default function LoginPage() {
                        disabled:opacity-50 disabled:cursor-not-allowed
                        text-white font-semibold transition"
           >
-            {loading ? "Connecting…" : "Connect & Start Earning"}
+            {loading ? "Signing in…" : "Sign In & Start Earning"}
           </button>
         </div>
 
         <p className="text-center text-zinc-600 text-xs">
-          Your wallet address is your identity. No password needed.
+          Use the address associated with your worker account.
         </p>
       </div>
     </div>
